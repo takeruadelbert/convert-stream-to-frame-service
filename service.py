@@ -1,16 +1,19 @@
+import base64
 import os
 import random
 
 import cv2
 from aiohttp import web
 
-from misc.constant.message import INVALID_PAYLOAD_DATA_MESSAGE
+from broker.broker import Broker
+from misc.constant.message import *
 from misc.constant.value import *
+from storage.storage import upload
 
 
 class ConvertStreamToFrameService:
     def __init__(self):
-        pass
+        self.broker = Broker()
 
     def return_message(self, **kwargs):
         message = kwargs.get("message", "")
@@ -22,29 +25,34 @@ class ConvertStreamToFrameService:
         capture = cv2.VideoCapture(stream)
         for index in range(DEFAULT_FPS):
             ret, frame = capture.read()
-            frames.append(frame)
+            ret, buffer = cv2.imencode('.jpg', frame)
+            encoded_image = base64.b64encode(buffer)
+            frames.append(encoded_image.decode('utf-8'))
         capture.release()
 
         if frames:
-            for index in range(os.getenv("NUMBER_OF_FRAME_TAKEN", DEFAULT_NUMBER_OF_FRAME_TAKEN)):
+            for index in range(int(os.getenv("NUMBER_OF_FRAME_TAKEN", DEFAULT_NUMBER_OF_FRAME_TAKEN))):
                 selected_index_frame = random.randint(0, DEFAULT_FPS - 1)
-                # encoded_frame = self.frame2base64(frames[selected_index_frame])
-                result.append(frames[selected_index_frame])
+                result.append({
+                    'filename': "frame{}.jpg".format(selected_index_frame),
+                    'encoded_file': "{}{}".format(DEFAULT_PREFIX_BASE64, frames[selected_index_frame])
+                })
         return result
 
     async def receive_from_master_node(self, request):
         payload = await request.json()
         if not payload['data']:
             return self.return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
-        sent_payload = []
         for data in payload['data']:
             stream = data['url_stream']
-            frames = self.convert_stream_to_frame(stream)
-            sent_payload.append({
-                'gate_id': data['gate_id'],
-                'images': frames
-            })
-        return self.return_message(message=sent_payload)
-
-    def upload_image_to_storage(self):
-        return self.return_message(message='Success')
+            gate_id = data['gate_id']
+            data_payload_queue = self.convert_stream_to_frame(stream)
+            for item in data_payload_queue:
+                response_upload = upload([item])
+                if response_upload['status'] == HTTP_STATUS_OK:
+                    sent_payload = {
+                        'gate_id': gate_id,
+                        'token': response_upload['token']
+                    }
+                    self.broker.produce(payload=sent_payload)
+        return self.return_message(message=MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)
