@@ -48,7 +48,7 @@ class ConvertStreamToFrameService:
             gate_id = data['gate_id']
             data_payload_queue = self.convert_stream_to_frame(stream)
             for item in data_payload_queue:
-                response_upload = upload([item])
+                response_upload = await upload([item])
                 if response_upload['status'] == HTTP_STATUS_OK:
                     sent_payload = {
                         'gate_id': gate_id,
