@@ -1,7 +1,7 @@
 import json
 import os
+
 import aiohttp
-import requests
 
 from misc.constant.value import HTTP_STATUS_BAD_REQUEST
 
