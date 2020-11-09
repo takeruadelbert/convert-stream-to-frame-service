@@ -21,23 +21,26 @@ class ConvertStreamToFrameService:
         return web.json_response({'message': message}, status=status)
 
     def convert_stream_to_frame(self, stream):
-        result, frames = [], []
-        capture = cv2.VideoCapture(stream)
-        for index in range(DEFAULT_FPS):
-            ret, frame = capture.read()
-            ret, buffer = cv2.imencode('.jpg', frame)
-            encoded_image = base64.b64encode(buffer)
-            frames.append(encoded_image.decode('utf-8'))
-        capture.release()
+        try:
+            result, frames = [], []
+            capture = cv2.VideoCapture(stream)
+            for index in range(DEFAULT_FPS):
+                ret, frame = capture.read()
+                ret, buffer = cv2.imencode('.jpg', frame)
+                encoded_image = base64.b64encode(buffer)
+                frames.append(encoded_image.decode('utf-8'))
+            capture.release()
 
-        if frames:
-            for index in range(int(os.getenv("NUMBER_OF_FRAME_TAKEN", DEFAULT_NUMBER_OF_FRAME_TAKEN))):
-                selected_index_frame = random.randint(0, DEFAULT_FPS - 1)
-                result.append({
-                    'filename': "frame{}.jpg".format(selected_index_frame),
-                    'encoded_file': "{}{}".format(DEFAULT_PREFIX_BASE64, frames[selected_index_frame])
-                })
-        return result
+            if frames:
+                for index in range(int(os.getenv("NUMBER_OF_FRAME_TAKEN", DEFAULT_NUMBER_OF_FRAME_TAKEN))):
+                    selected_index_frame = random.randint(0, DEFAULT_FPS - 1)
+                    result.append({
+                        'filename': "frame{}.jpg".format(selected_index_frame),
+                        'encoded_file': "{}{}".format(DEFAULT_PREFIX_BASE64, frames[selected_index_frame])
+                    })
+            return result
+        except Exception:
+            return None
 
     async def receive_from_master_node(self, request):
         payload = await request.json()
@@ -47,12 +50,18 @@ class ConvertStreamToFrameService:
             stream = data['url_stream']
             gate_id = data['gate_id']
             data_payload_queue = self.convert_stream_to_frame(stream)
-            for item in data_payload_queue:
-                response_upload = await upload([item])
-                if response_upload['status'] == HTTP_STATUS_OK:
-                    sent_payload = {
-                        'gate_id': gate_id,
-                        'token': response_upload['token']
-                    }
-                    self.broker.produce(payload=sent_payload)
+            if data_payload_queue:
+                for item in data_payload_queue:
+                    response_upload = await upload([item])
+                    if response_upload['status'] == HTTP_STATUS_OK:
+                        sent_payload = {
+                            'gate_id': gate_id,
+                            'token': response_upload['token']
+                        }
+                        self.broker.produce(payload=sent_payload)
+                    else:
+                        return self.return_message(status=HTTP_STATUS_BAD_REQUEST, message=MESSAGE_UPLOAD_ERROR)
+            else:
+                return self.return_message(status=HTTP_STATUS_BAD_REQUEST,
+                                           message='{} [{}]'.format(MESSAGE_CANNOT_READ_STREAM, stream))
         return self.return_message(message=MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)
