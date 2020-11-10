@@ -12,8 +12,9 @@ from storage.storage import upload
 
 
 class ConvertStreamToFrameService:
-    def __init__(self):
-        self.broker = Broker()
+    def __init__(self, logger):
+        self.broker = Broker(logger)
+        self.logger = logger
 
     def return_message(self, **kwargs):
         message = kwargs.get("message", "")
@@ -22,6 +23,7 @@ class ConvertStreamToFrameService:
 
     def convert_stream_to_frame(self, stream):
         try:
+            self.logger.info('converting stream {}'.format(stream))
             result, frames = [], []
             capture = cv2.VideoCapture(stream)
             for index in range(DEFAULT_FPS):
@@ -39,12 +41,14 @@ class ConvertStreamToFrameService:
                         'encoded_file': "{}{}".format(DEFAULT_PREFIX_BASE64, frames[selected_index_frame])
                     })
             return result
-        except Exception:
+        except Exception as error:
+            self.logger.error('Cannot Converting Stream to Frame : {}'.format(error))
             return None
 
     async def receive_from_master_node(self, request):
         payload = await request.json()
         if not payload['data']:
+            self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
             return self.return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
         for data in payload['data']:
             stream = data['url_stream']
@@ -58,10 +62,13 @@ class ConvertStreamToFrameService:
                             'gate_id': gate_id,
                             'token': response_upload['token']
                         }
+                        self.logger.info('sending payload to queue.')
                         self.broker.produce(payload=sent_payload)
                     else:
+                        self.logger.error(MESSAGE_UPLOAD_ERROR)
                         return self.return_message(status=HTTP_STATUS_BAD_REQUEST, message=MESSAGE_UPLOAD_ERROR)
             else:
                 return self.return_message(status=HTTP_STATUS_BAD_REQUEST,
                                            message='{} [{}]'.format(MESSAGE_CANNOT_READ_STREAM, stream))
+        self.logger.info(MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)
         return self.return_message(message=MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)

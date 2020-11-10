@@ -8,3 +8,4 @@ HTTP_STATUS_BAD_REQUEST = 400
 HTTP_STATUS_NOT_FOUND = 404
 
 DEFAULT_PREFIX_BASE64 = 'data:image/jpeg;base64,'
+DEFAULT_APP_NAME = 'stream-to-frame'
