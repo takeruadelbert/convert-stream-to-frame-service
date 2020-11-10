@@ -151,3 +151,4 @@ crashlytics-build.properties
 fabric.properties
 
 environment.env
+log/*

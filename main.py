@@ -7,6 +7,7 @@ from aiohttp import web
 from aiojobs.aiohttp import setup
 
 from misc.constant.value import DEFAULT_PORT, DEFAULT_APP_NAME
+from misc.helper.helper import create_log_dir_if_does_not_exists
 from service import ConvertStreamToFrameService
 
 logger = logging.getLogger(DEFAULT_APP_NAME)
@@ -25,6 +26,8 @@ def setup_log():
     logger.addHandler(handler)
 
 
+create_log_dir_if_does_not_exists('log')
+setup_log()
 service = ConvertStreamToFrameService(logger)
 
 

@@ -47,6 +47,7 @@ class ConvertStreamToFrameService:
 
     async def receive_from_master_node(self, request):
         payload = await request.json()
+        self.logger.info('received data from master node : {}'.format(payload))
         if not payload['data']:
             self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
             return self.return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
@@ -62,7 +63,7 @@ class ConvertStreamToFrameService:
                             'gate_id': gate_id,
                             'token': response_upload['token']
                         }
-                        self.logger.info('sending payload to queue.')
+                        self.logger.info('sending payload {} to queue.'.format(sent_payload))
                         self.broker.produce(payload=sent_payload)
                     else:
                         self.logger.error(MESSAGE_UPLOAD_ERROR)
