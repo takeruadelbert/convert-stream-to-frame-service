@@ -42,7 +42,6 @@ def setup_route():
 async def scheduler_convert_stream_to_frame():
     logger.info('starting scheduler convert stream to frame ...')
     while True:
-        print('test')
         await service.auto_convert()
         await asyncio.sleep(
             int(os.getenv("DELAY_TIME_CONVERT_STREAM_TO_FRAME_SCHEDULER",
