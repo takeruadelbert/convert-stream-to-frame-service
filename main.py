@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import re
@@ -6,7 +7,7 @@ from logging.handlers import TimedRotatingFileHandler
 from aiohttp import web
 from aiojobs.aiohttp import setup
 
-from misc.constant.value import DEFAULT_PORT, DEFAULT_APP_NAME
+from misc.constant.value import DEFAULT_PORT, DEFAULT_APP_NAME, DEFAULT_DELAY_TIME_CONVERT_STREAM_TO_FRAME_SCHEDULER
 from misc.helper.helper import create_log_dir_if_does_not_exists
 from service import ConvertStreamToFrameService
 
@@ -34,12 +35,23 @@ service = ConvertStreamToFrameService(logger)
 def setup_route():
     return [
         web.post('/stream-to-frame', service.receive_from_master_node),
-        web.get('/stream', service.fetch_data)
+        web.delete('/gate', service.delete_gate_id)
     ]
+
+
+async def scheduler_convert_stream_to_frame():
+    logger.info('starting scheduler convert stream to frame ...')
+    while True:
+        print('test')
+        await service.auto_convert()
+        await asyncio.sleep(
+            int(os.getenv("DELAY_TIME_CONVERT_STREAM_TO_FRAME_SCHEDULER",
+                          DEFAULT_DELAY_TIME_CONVERT_STREAM_TO_FRAME_SCHEDULER)))
 
 
 async def initialization():
     app = web.Application()
+    asyncio.get_event_loop().create_task(scheduler_convert_stream_to_frame())
     app.router.add_routes(setup_route())
     setup(app)
     return app
