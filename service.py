@@ -81,27 +81,6 @@ class ConvertStreamToFrameService:
             return return_message(status=HTTP_STATUS_BAD_REQUEST,
                                   message='{} [{}]'.format(MESSAGE_CANNOT_READ_STREAM, stream))
 
-    async def delete_gate_id(self, request):
-        payload = await request.json()
-        self.logger.info('receiving data payload : {}'.format(payload))
-        if not payload['gate_id']:
-            self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
-            return return_message(status=HTTP_STATUS_BAD_REQUEST, message=INVALID_PAYLOAD_DATA_MESSAGE)
-        gate_id = payload['gate_id']
-        if self.database.check_if_gate_id_exists(gate_id):
-            if self.database.delete_gate_id(gate_id):
-                message = '{} {}'.format(MESSAGE_DELETE_GATE_ID_SUCCESS, gate_id)
-                return return_message(message=message)
-            else:
-                message = '{} {}'.format(MESSAGE_DELETE_GATE_ID_FAILED, gate_id)
-                return return_message(status=HTTP_STATUS_UNPROCESSABLE_ENTITY,
-                                      message=message)
-        else:
-            message = '{} : {}'.format(MESSAGE_GATE_ID_NOT_FOUND, gate_id)
-            self.logger.warning(message)
-            return return_message(status=HTTP_STATUS_NOT_FOUND,
-                                  message=message)
-
     async def auto_convert(self):
         data = self.database.fetch_data_stream()
         result = []

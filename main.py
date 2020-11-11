@@ -34,8 +34,7 @@ service = ConvertStreamToFrameService(logger)
 
 def setup_route():
     return [
-        web.post('/stream-to-frame', service.receive_from_master_node),
-        web.delete('/gate', service.delete_gate_id)
+        web.post('/stream-to-frame', service.receive_from_master_node)
     ]
 
 
