@@ -31,7 +31,8 @@ class ConvertStreamToFrameService:
             capture = cv2.VideoCapture(stream)
             for index in range(DEFAULT_FPS):
                 ret, frame = capture.read()
-                ret, buffer = cv2.imencode('.jpg', frame)
+                encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 70]
+                ret, buffer = cv2.imencode('.jpg', frame, encode_param)
                 encoded_image = base64.b64encode(buffer)
                 frames.append(encoded_image.decode('utf-8'))
             capture.release()
