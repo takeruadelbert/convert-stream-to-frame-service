@@ -32,7 +32,7 @@ class ConvertStreamToFrameService:
             for index in range(DEFAULT_FPS):
                 ret, frame = capture.read()
                 encode_param = [int(cv2.IMWRITE_JPEG_QUALITY),
-                                os.getenv("JPG_IMAGE_QUALITY", DEFAULT_JPG_IMAGE_QUALITY)]
+                                int(os.getenv("JPG_IMAGE_QUALITY", DEFAULT_JPG_IMAGE_QUALITY))]
                 ret, buffer = cv2.imencode('.jpg', frame, encode_param)
                 encoded_image = base64.b64encode(buffer)
                 frames.append(encoded_image.decode('utf-8'))
