@@ -51,19 +51,33 @@ class ConvertStreamToFrameService:
             return None
 
     async def receive_from_master_node(self, request):
-        payload = await request.json()
-        self.logger.info('received data from master node : {}'.format(payload))
-        if not payload['data']:
-            self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
-            return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
-        for data in payload['data']:
-            stream = data['url_stream']
-            gate_id = data['gate_id']
-            data_payload_queue = self.convert_stream_to_frame(stream)
-            await self.upload_send_to_broker(data_payload_queue, gate_id, stream)
+        try:
+            payload = await request.json()
+            self.logger.info('received data from master node : {}'.format(payload))
+            if not payload['encoded_file']:
+                self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
+                return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
+            await self.upload_image_to_broker(payload)
+            self.logger.info(MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)
+            return return_message(message=MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)
+        except Exception as error:
+            message = "Error when processing received data from master node : {}".format(error)
+            self.logger.error(message)
+            return return_message(status=HTTP_STATUS_UNPROCESSABLE_ENTITY, message=message)
 
-        self.logger.info(MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)
-        return return_message(message=MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)
+    async def upload_image_to_broker(self, payload):
+        if payload:
+            response = await upload([payload])
+            if response['status'] == HTTP_STATUS_OK:
+                sent_payload = {'token': response['token']}
+                self.logger.info('sending payload {} to queue'.format(sent_payload))
+                self.broker.produce(topic=os.getenv("KAFKA_IMAGE_PROCESS_TOPIC"), payload=sent_payload)
+            else:
+                self.logger.error(MESSAGE_UPLOAD_ERROR)
+                return return_message(status=HTTP_STATUS_BAD_REQUEST, message=MESSAGE_UPLOAD_ERROR)
+        else:
+            self.logger.warning(MESSAGE_IMAGE_PAYLOAD_EMPTY)
+            return return_message(status=HTTP_STATUS_BAD_REQUEST, message=MESSAGE_IMAGE_PAYLOAD_EMPTY)
 
     async def upload_send_to_broker(self, data, gate_id, stream):
         if data:
@@ -75,13 +89,14 @@ class ConvertStreamToFrameService:
                         'token': response_upload['token']
                     }
                     self.logger.info('sending payload {} to queue.'.format(sent_payload))
-                    self.broker.produce(payload=sent_payload)
+                    self.broker.produce(topic=os.getenv("KAFKA_TOPIC"), payload=sent_payload)
                 else:
                     self.logger.error(MESSAGE_UPLOAD_ERROR)
                     return return_message(status=HTTP_STATUS_BAD_REQUEST, message=MESSAGE_UPLOAD_ERROR)
         else:
-            return return_message(status=HTTP_STATUS_BAD_REQUEST,
-                                  message='{} [{}]'.format(MESSAGE_CANNOT_READ_STREAM, stream))
+            message = '{} [{}]'.format(MESSAGE_CANNOT_READ_STREAM, stream)
+            self.logger.warning(message)
+            return return_message(status=HTTP_STATUS_BAD_REQUEST, message=message)
 
     async def auto_convert(self):
         data = self.database.fetch_data_stream()

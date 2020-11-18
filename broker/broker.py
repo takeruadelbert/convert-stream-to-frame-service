@@ -14,7 +14,7 @@ class Broker:
 
     def produce(self, **kwargs):
         try:
-            topic = os.getenv("KAFKA_TOPIC")
+            topic = kwargs.get("topic")
             payload = kwargs.get("payload")
             self.producer.send(topic, payload)
             self.logger.info('payload sent')

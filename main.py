@@ -34,7 +34,7 @@ service = ConvertStreamToFrameService(logger)
 
 def setup_route():
     return [
-        web.post('/stream-to-frame', service.receive_from_master_node)
+        web.post('/process-lpr-image', service.receive_from_master_node)
     ]
 
 
