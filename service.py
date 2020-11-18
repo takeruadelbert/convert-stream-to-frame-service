@@ -9,13 +9,15 @@ from broker.broker import Broker
 from database.database import Database
 from misc.constant.message import *
 from misc.constant.value import *
+from misc.helper.helper import get_current_timestamp_ms
 from storage.storage import upload
 
 
 def return_message(**kwargs):
     message = kwargs.get("message", "")
     status = kwargs.get("status", HTTP_STATUS_OK)
-    return web.json_response({'message': message}, status=status)
+    data = kwargs.get("data", [])
+    return web.json_response({'message': message, 'data': data}, status=status)
 
 
 class ConvertStreamToFrameService:
@@ -57,9 +59,14 @@ class ConvertStreamToFrameService:
             if not payload['encoded_file']:
                 self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
                 return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
-            await self.upload_image_to_broker(payload)
-            self.logger.info(MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)
-            return return_message(message=MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE)
+            ticket_number = await self.upload_image_to_broker(payload)
+            if ticket_number:
+                data = {'ticket_number': ticket_number}
+                self.logger.info('{} : {}'.format(MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE, data))
+                return return_message(message=MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE, data=data)
+            else:
+                self.logger.error(MESSAGE_INVALID_TICKET_NUMBER)
+                return return_message(status=HTTP_STATUS_UNPROCESSABLE_ENTITY, message=MESSAGE_INVALID_TICKET_NUMBER)
         except Exception as error:
             message = "Error when processing received data from master node : {}".format(error)
             self.logger.error(message)
@@ -69,15 +76,21 @@ class ConvertStreamToFrameService:
         if payload:
             response = await upload([payload])
             if response['status'] == HTTP_STATUS_OK:
-                sent_payload = {'token': response['token']}
-                self.logger.info('sending payload {} to queue'.format(sent_payload))
-                self.broker.produce(topic=os.getenv("KAFKA_IMAGE_PROCESS_TOPIC"), payload=sent_payload)
+                token = response['token']
+                ticket_number = get_current_timestamp_ms()
+                if self.database.add_default_image_result_data(ticket_number):
+                    sent_payload = {'token': token, 'ticket_number': ticket_number}
+                    self.logger.info('sending payload {} to queue'.format(sent_payload))
+                    self.broker.produce(topic=os.getenv("KAFKA_IMAGE_PROCESS_TOPIC"), payload=sent_payload)
+                    return ticket_number
+                else:
+                    return None
             else:
                 self.logger.error(MESSAGE_UPLOAD_ERROR)
-                return return_message(status=HTTP_STATUS_BAD_REQUEST, message=MESSAGE_UPLOAD_ERROR)
+                return None
         else:
             self.logger.warning(MESSAGE_IMAGE_PAYLOAD_EMPTY)
-            return return_message(status=HTTP_STATUS_BAD_REQUEST, message=MESSAGE_IMAGE_PAYLOAD_EMPTY)
+            return None
 
     async def upload_send_to_broker(self, data, gate_id, stream):
         if data:

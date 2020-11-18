@@ -10,3 +10,4 @@ MESSAGE_DELETE_GATE_ID_SUCCESS = 'Gate ID has successfully been removed from dat
 MESSAGE_DELETE_GATE_ID_FAILED = 'an error has occurred when removing Gate ID'
 MESSAGE_GATE_ID_NOT_FOUND = 'Data Gate ID does not exists.'
 MESSAGE_IMAGE_PAYLOAD_EMPTY = 'Payload Image is empty.'
+MESSAGE_INVALID_TICKET_NUMBER = 'Invalid Ticket Number'

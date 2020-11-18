@@ -2,6 +2,8 @@ import os
 
 import pymysql.cursors
 
+from misc.constant.value import STATUS_PROCESSING
+
 db_host = os.getenv("DB_HOST")
 db_username = os.getenv("DB_USERNAME")
 db_password = os.getenv("DB_PASSWORD")
@@ -22,3 +24,14 @@ class Database:
     def check_if_gate_id_exists(self, gate_id):
         self.db_cursor.execute("SELECT gate_id FROM state WHERE gate_id = %s", (gate_id,))
         return self.db_cursor.fetchone()
+
+    def add_default_image_result_data(self, ticket):
+        try:
+            self.db_cursor.execute("INSERT INTO image_result (ticket_number, status) VALUES (%s, %s)",
+                                   (ticket, STATUS_PROCESSING))
+            self.db_connection.commit()
+            self.logger.info("Success added default data image result with ticket number : {}".format(ticket))
+            return True
+        except Exception as error:
+            self.logger.error("Error has occurred when adding default data image result : {}".format(error))
+            return False
