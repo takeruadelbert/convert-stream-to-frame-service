@@ -3,14 +3,14 @@ import os
 import random
 
 import cv2
-from aiohttp import web
+from aiohttp import web, FormData
 
 from broker.broker import Broker
 from database.database import Database
 from misc.constant.message import *
 from misc.constant.value import *
 from misc.helper.helper import get_current_timestamp_ms
-from storage.storage import upload
+from storage.storage import json_upload, form_upload
 
 
 def return_message(**kwargs):
@@ -52,29 +52,64 @@ class ConvertStreamToFrameService:
             self.logger.error('Cannot Converting Stream to Frame : {}'.format(error))
             return None
 
-    async def receive_from_master_node(self, request):
+    async def upload_encoded(self, request):
         try:
             payload = await request.json()
             self.logger.info('received data from master node : {}'.format(payload))
             if not payload['encoded_file']:
                 self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
                 return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
-            ticket_number = await self.upload_image_to_broker(payload)
-            if ticket_number:
-                data = {'ticket_number': ticket_number}
-                self.logger.info('{} : {}'.format(MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE, data))
-                return return_message(message=MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE, data=data)
-            else:
-                self.logger.error(MESSAGE_INVALID_TICKET_NUMBER)
-                return return_message(status=HTTP_STATUS_UNPROCESSABLE_ENTITY, message=MESSAGE_INVALID_TICKET_NUMBER)
+            ticket_number = await self.upload_image_to_broker(upload_type='base64', payload=[payload])
+            return self.show_ticket_number(ticket_number)
         except Exception as error:
-            message = "Error when processing received data from master node : {}".format(error)
-            self.logger.error(message)
-            return return_message(status=HTTP_STATUS_UNPROCESSABLE_ENTITY, message=message)
+            return self.process_error(error)
 
-    async def upload_image_to_broker(self, payload):
+    async def upload_raw(self, request):
+        try:
+            payload = await request.post()
+            self.logger.info('received data from master node : {}'.format(payload))
+            if not payload:
+                self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
+                return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
+            ticket_number = await self.upload_image_to_broker(upload_type='raw', payload=payload)
+            return self.show_ticket_number(ticket_number)
+        except Exception as error:
+            return self.process_error(error)
+
+    async def upload_url(self, request):
+        try:
+            payload = await request.post()
+            self.logger.info('received data from master node : {}'.format(payload))
+            if not payload:
+                self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
+                return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
+            ticket_number = await self.upload_image_to_broker(upload_type='url', payload=[payload])
+            return self.show_ticket_number(ticket_number)
+        except Exception as error:
+            return self.process_error(error)
+
+    def show_ticket_number(self, ticket_number):
+        if ticket_number:
+            data = {'ticket_number': ticket_number}
+            self.logger.info('{} : {}'.format(MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE, data))
+            return return_message(message=MESSAGE_SUCCESS_SENT_DATA_TO_QUEUE, data=data)
+        else:
+            self.logger.error(MESSAGE_INVALID_TICKET_NUMBER)
+            return return_message(status=HTTP_STATUS_UNPROCESSABLE_ENTITY, message=MESSAGE_INVALID_TICKET_NUMBER)
+
+    def process_error(self, error):
+        message = "Error when processing received data from master node : {}".format(error)
+        self.logger.error(message)
+        return return_message(status=HTTP_STATUS_UNPROCESSABLE_ENTITY, message=message)
+
+    async def upload_image_to_broker(self, **kwargs):
+        upload_type = kwargs.get("upload_type")
+        payload = kwargs.get("payload")
         if payload:
-            response = await upload([payload])
+            if upload_type == 'raw':
+                response = await form_upload(upload_type=upload_type, payload=payload)
+            else:
+                response = await json_upload(upload_type=upload_type, payload=payload)
             if response['status'] == HTTP_STATUS_OK:
                 token = response['token']
                 ticket_number = get_current_timestamp_ms()
@@ -95,7 +130,7 @@ class ConvertStreamToFrameService:
     async def upload_send_to_broker(self, data, gate_id, stream):
         if data:
             for item in data:
-                response_upload = await upload([item])
+                response_upload = await json_upload(upload_type='base64', payload=[item])
                 if response_upload['status'] == HTTP_STATUS_OK:
                     sent_payload = {
                         'gate_id': gate_id,
