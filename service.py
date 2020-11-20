@@ -78,12 +78,12 @@ class ConvertStreamToFrameService:
 
     async def upload_url(self, request):
         try:
-            payload = await request.post()
+            payload = await request.json()
             self.logger.info('received data from master node : {}'.format(payload))
             if not payload:
                 self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
                 return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
-            ticket_number = await self.upload_image_to_broker(upload_type='url', payload=[payload])
+            ticket_number = await self.upload_image_to_broker(upload_type='url', payload=payload)
             return self.show_ticket_number(ticket_number)
         except Exception as error:
             return self.process_error(error)
