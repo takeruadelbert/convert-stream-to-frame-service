@@ -3,3 +3,4 @@ aiojobs~=0.2.2
 kafka-python~=2.0.2
 opencv-python~=4.4.0.46
 PyMySQL~=0.10.1
+arrow~=0.17.0

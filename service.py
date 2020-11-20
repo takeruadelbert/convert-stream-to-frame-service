@@ -113,7 +113,7 @@ class ConvertStreamToFrameService:
             if response['status'] == HTTP_STATUS_OK:
                 token = response['token']
                 ticket_number = get_current_timestamp_ms()
-                if self.database.add_default_image_result_data(ticket_number):
+                if self.database.add_default_image_result_data(ticket_number, token):
                     sent_payload = {'token': token, 'ticket_number': ticket_number}
                     self.logger.info('sending payload {} to queue'.format(sent_payload))
                     self.broker.produce(topic=os.getenv("KAFKA_IMAGE_PROCESS_TOPIC"), payload=sent_payload)
