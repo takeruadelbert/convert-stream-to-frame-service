@@ -3,7 +3,7 @@ import os
 import random
 
 import cv2
-from aiohttp import web, FormData
+from aiohttp import web
 
 from broker.broker import Broker
 from database.database import Database
