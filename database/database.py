@@ -3,6 +3,7 @@ import os
 import pymysql.cursors
 
 from misc.constant.value import STATUS_PROCESSING
+from misc.helper.helper import get_current_datetime
 
 db_host = os.getenv("DB_HOST")
 db_username = os.getenv("DB_USERNAME")
@@ -25,10 +26,11 @@ class Database:
         self.db_cursor.execute("SELECT gate_id FROM state WHERE gate_id = %s", (gate_id,))
         return self.db_cursor.fetchone()
 
-    def add_default_image_result_data(self, ticket):
+    def add_default_image_result_data(self, ticket, token):
         try:
-            self.db_cursor.execute("INSERT INTO image_result (ticket_number, status) VALUES (%s, %s)",
-                                   (ticket, STATUS_PROCESSING))
+            self.db_cursor.execute(
+                "INSERT INTO lpr_input (ticket_number, token, status, created) VALUES (%s, %s, %s, %s)",
+                (ticket, token, STATUS_PROCESSING, get_current_datetime()))
             self.db_connection.commit()
             self.logger.info("Success added default data image result with ticket number : {}".format(ticket))
             return True
