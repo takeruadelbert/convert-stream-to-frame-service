@@ -132,9 +132,10 @@ class ConvertStreamToFrameService:
             for item in data:
                 response_upload = await json_upload(upload_type='base64', payload=[item])
                 if response_upload['status'] == HTTP_STATUS_OK:
+                    token = response_upload['token']
                     sent_payload = {
                         'gate_id': gate_id,
-                        'token': response_upload['token']
+                        'token': token
                     }
                     self.logger.info('sending payload {} to queue.'.format(sent_payload))
                     self.broker.produce(topic=os.getenv("KAFKA_TOPIC"), payload=sent_payload)

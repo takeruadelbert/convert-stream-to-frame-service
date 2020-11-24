@@ -2,7 +2,7 @@ import os
 
 import pymysql.cursors
 
-from misc.constant.value import STATUS_PROCESSING
+from misc.constant.value import STATUS_PROCESSING, STATUS_RUNNING
 from misc.helper.helper import get_current_datetime
 
 db_host = os.getenv("DB_HOST")
@@ -19,7 +19,7 @@ class Database:
         self.db_cursor = self.db_connection.cursor()
 
     def fetch_data_stream(self):
-        self.db_cursor.execute("SELECT url, gate_id FROM state")
+        self.db_cursor.execute("SELECT url, gate_id FROM state WHERE status = %s", (STATUS_RUNNING,))
         return self.db_cursor.fetchall()
 
     def check_if_gate_id_exists(self, gate_id):
