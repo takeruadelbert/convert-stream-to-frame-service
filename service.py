@@ -153,10 +153,10 @@ class ConvertStreamToFrameService:
         if data:
             for state in data:
                 url_stream = state[0]
-                gate_id = state[1]
+                id_gate = state[1]
                 result.append({
-                    'gate_id': gate_id,
+                    'id_gate': id_gate,
                     'url_stream': url_stream
                 })
                 data_payload_queue = self.convert_stream_to_frame(url_stream)
-                await self.upload_send_to_broker(data_payload_queue, gate_id, url_stream)
+                await self.upload_send_to_broker(data_payload_queue, id_gate, url_stream)
