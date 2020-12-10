@@ -29,7 +29,7 @@ class Database:
     def add_default_image_result_data(self, ticket, token):
         try:
             self.db_cursor.execute(
-                "INSERT INTO input_image (ticket_number, token, status, created) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO input_image (ticket_number, token, status, created_date) VALUES (%s, %s, %s, %s)",
                 (ticket, token, STATUS_PROCESSING, get_current_datetime()))
             self.db_connection.commit()
             self.logger.info("Success added default data image result with ticket number : {}".format(ticket))
