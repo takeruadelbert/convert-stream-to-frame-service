@@ -19,17 +19,17 @@ class Database:
         self.db_cursor = self.db_connection.cursor()
 
     def fetch_data_stream(self):
-        self.db_cursor.execute("SELECT url, gate_id FROM state WHERE status = %s", (STATUS_RUNNING,))
+        self.db_cursor.execute("SELECT url, id_gate FROM data_state WHERE status = %s", (STATUS_RUNNING,))
         return self.db_cursor.fetchall()
 
     def check_if_gate_id_exists(self, gate_id):
-        self.db_cursor.execute("SELECT gate_id FROM state WHERE gate_id = %s", (gate_id,))
+        self.db_cursor.execute("SELECT id_gate FROM data_state WHERE id_gate = %s", (gate_id,))
         return self.db_cursor.fetchone()
 
     def add_default_image_result_data(self, ticket, token):
         try:
             self.db_cursor.execute(
-                "INSERT INTO lpr_input (ticket_number, token, status, created) VALUES (%s, %s, %s, %s)",
+                "INSERT INTO input_image (ticket_number, token, status, created_date) VALUES (%s, %s, %s, %s)",
                 (ticket, token, STATUS_PROCESSING, get_current_datetime()))
             self.db_connection.commit()
             self.logger.info("Success added default data image result with ticket number : {}".format(ticket))

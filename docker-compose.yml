@@ -1,0 +1,11 @@
+version: '2.4'
+services:
+  stream:
+    container_name: stream-to-frame
+    image: takeruadelbert/stream-to-frame
+    command: ./run.sh -m http.server 7071
+    ports:
+      - 7071:7071
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
