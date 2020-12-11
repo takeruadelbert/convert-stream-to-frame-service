@@ -4,7 +4,7 @@ import os
 import aiohttp
 from aiohttp import FormData
 
-from misc.constant.value import HTTP_STATUS_BAD_REQUEST
+from src.misc.constant.value import HTTP_STATUS_BAD_REQUEST
 
 host_storage = "{}:{}".format(os.getenv("STORAGE_HOST"), os.getenv("STORAGE_PORT"))
 url_upload_base64 = "{}/{}".format(host_storage, os.getenv("STORAGE_UPLOAD_BASE64_URL"))
