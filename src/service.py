@@ -152,8 +152,8 @@ class ConvertStreamToFrameService:
         result = []
         if data:
             for state in data:
-                url_stream = state[0]
-                id_gate = state[1]
+                url_stream = state.url
+                id_gate = state.id_gate
                 result.append({
                     'id_gate': id_gate,
                     'url_stream': url_stream
