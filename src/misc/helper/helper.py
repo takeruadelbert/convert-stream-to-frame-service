@@ -3,7 +3,7 @@ import time
 
 import arrow
 
-from misc.constant.value import DEFAULT_DATETIME_FORMAT
+from src.misc.constant.value import DEFAULT_DATETIME_FORMAT
 
 
 def create_log_dir_if_does_not_exists(dirname):

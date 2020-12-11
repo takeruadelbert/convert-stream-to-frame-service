@@ -2,8 +2,8 @@ import os
 
 import pymysql.cursors
 
-from misc.constant.value import STATUS_PROCESSING, STATUS_RUNNING
-from misc.helper.helper import get_current_datetime
+from src.misc.constant.value import STATUS_PROCESSING, STATUS_RUNNING
+from src.misc.helper.helper import get_current_datetime
 
 db_host = os.getenv("DB_HOST")
 db_username = os.getenv("DB_USERNAME")
