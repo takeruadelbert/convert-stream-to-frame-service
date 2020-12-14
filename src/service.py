@@ -3,7 +3,8 @@ import os
 import random
 
 import cv2
-from aiohttp import web
+from fastapi import HTTPException
+from pydantic import ValidationError
 
 from broker.broker import Broker
 from database.database import Database
@@ -17,7 +18,9 @@ def return_message(**kwargs):
     message = kwargs.get("message", "")
     status = kwargs.get("status", HTTP_STATUS_OK)
     data = kwargs.get("data", [])
-    return web.json_response({'message': message, 'data': data}, status=status)
+    if status != HTTP_STATUS_OK:
+        raise HTTPException(status_code=status, detail=message)
+    return {'message': message, 'data': data}
 
 
 class ConvertStreamToFrameService:
@@ -52,39 +55,31 @@ class ConvertStreamToFrameService:
             self.logger.error('Cannot Converting Stream to Frame : {}'.format(error))
             return None
 
-    async def upload_encoded(self, request):
+    async def upload_encoded(self, payload):
         try:
-            payload = await request.json()
             self.logger.info('received data from master node : {}'.format(payload))
-            if not payload['encoded_file']:
-                self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
-                return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
             ticket_number = await self.upload_image_to_broker(upload_type='base64', payload=[payload])
             return self.show_ticket_number(ticket_number)
+        except ValidationError as error:
+            return self.process_error(error)
         except Exception as error:
             return self.process_error(error)
 
-    async def upload_raw(self, request):
+    async def upload_raw(self, payload):
         try:
-            payload = await request.post()
             self.logger.info('received data from master node : {}'.format(payload))
-            if not payload:
-                self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
-                return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
             ticket_number = await self.upload_image_to_broker(upload_type='raw', payload=payload)
             return self.show_ticket_number(ticket_number)
         except Exception as error:
             return self.process_error(error)
 
-    async def upload_url(self, request):
+    async def upload_url(self, payload):
         try:
-            payload = await request.json()
             self.logger.info('received data from master node : {}'.format(payload))
-            if not payload:
-                self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
-                return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
             ticket_number = await self.upload_image_to_broker(upload_type='url', payload=payload)
             return self.show_ticket_number(ticket_number)
+        except ValidationError as error:
+            return self.process_error(error)
         except Exception as error:
             return self.process_error(error)
 

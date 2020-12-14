@@ -3,7 +3,7 @@ import time
 
 import arrow
 
-from src.misc.constant.value import DEFAULT_DATETIME_FORMAT
+from src.misc.constant.value import DEFAULT_DATETIME_FORMAT, IMAGE_EXT
 
 
 def create_log_dir_if_does_not_exists(dirname):
@@ -17,3 +17,7 @@ def get_current_timestamp_ms():
 
 def get_current_datetime():
     return arrow.now().format(DEFAULT_DATETIME_FORMAT)
+
+
+def check_image_ext_validity(filename):
+    return filename.lower().endswith(IMAGE_EXT)
