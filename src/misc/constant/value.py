@@ -18,3 +18,5 @@ STATUS_DONE = "DONE"
 STATUS_RUNNING = "RUNNING"
 
 DEFAULT_DATETIME_FORMAT = "YYYY-MM-DD HH:mm:ss"
+
+IMAGE_EXT = ('.jpg', '.jpeg', '.png')
