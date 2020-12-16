@@ -7,6 +7,7 @@ from logging.handlers import TimedRotatingFileHandler
 import uvicorn
 from fastapi import FastAPI
 
+from src.eureka.eureka import register_service_to_eureka_server
 from src.misc.constant.value import DEFAULT_PORT, DEFAULT_APP_NAME, DEFAULT_DELAY_TIME_CONVERT_STREAM_TO_FRAME_SCHEDULER
 from src.misc.helper.helper import create_log_dir_if_does_not_exists
 from src.model.model import EncodedUpload, UrlUpload
@@ -30,6 +31,7 @@ def setup_log():
 
 create_log_dir_if_does_not_exists('log')
 setup_log()
+register_service_to_eureka_server(logger)
 service = ConvertStreamToFrameService(logger)
 app = FastAPI()
 
