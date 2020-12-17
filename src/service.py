@@ -11,7 +11,7 @@ from database.database import Database
 from misc.constant.message import *
 from misc.constant.value import *
 from misc.helper.helper import get_current_timestamp_ms
-from storage.storage import json_upload, form_upload
+from storage.storage import json_upload
 
 
 def return_message(**kwargs):
@@ -101,10 +101,7 @@ class ConvertStreamToFrameService:
         upload_type = kwargs.get("upload_type")
         payload = kwargs.get("payload")
         if payload:
-            if upload_type == 'raw':
-                response = await form_upload(upload_type=upload_type, payload=payload)
-            else:
-                response = await json_upload(upload_type=upload_type, payload=payload)
+            response = json_upload(upload_type=upload_type, payload=payload)
             if response['status'] == HTTP_STATUS_OK:
                 token = response['token']
                 ticket_number = get_current_timestamp_ms()
@@ -125,7 +122,7 @@ class ConvertStreamToFrameService:
     async def upload_send_to_broker(self, data, gate_id, stream):
         if data:
             for item in data:
-                response_upload = await json_upload(upload_type='base64', payload=[item])
+                response_upload = json_upload(upload_type='base64', payload=[item])
                 if response_upload['status'] == HTTP_STATUS_OK:
                     token = response_upload['token']
                     sent_payload = {

@@ -1,15 +1,14 @@
 import json
 import os
 
-import aiohttp
-from aiohttp import FormData
+import py_eureka_client.eureka_client as eureka_client
 
-from src.misc.constant.value import HTTP_STATUS_BAD_REQUEST
+from src.misc.constant.value import HTTP_STATUS_BAD_REQUEST, LPR_STORAGE_APP_NAME, RETURN_TYPE_JSON, \
+    HTTP_REQUEST_METHOD_POST
 
-host_storage = "{}:{}".format(os.getenv("STORAGE_HOST"), os.getenv("STORAGE_PORT"))
-url_upload_base64 = "{}/{}".format(host_storage, os.getenv("STORAGE_UPLOAD_BASE64_URL"))
-url_upload_raw = "{}/{}".format(host_storage, os.getenv("STORAGE_UPLOAD_RAW_URL"))
-url_upload_via_url = "{}/{}".format(host_storage, os.getenv("STORAGE_UPLOAD_VIA_URL"))
+url_upload_base64 = os.getenv("STORAGE_UPLOAD_BASE64_URL")
+url_upload_raw = os.getenv("STORAGE_UPLOAD_RAW_URL")
+url_upload_via_url = os.getenv("STORAGE_UPLOAD_VIA_URL")
 
 upload_types = {
     'raw': url_upload_raw,
@@ -18,44 +17,27 @@ upload_types = {
 }
 
 
-async def json_upload(**kwargs):
+def json_upload(**kwargs):
     upload_type = kwargs.get("upload_type", "raw")
-    host = upload_types[upload_type]
+    url_path = upload_types[upload_type]
     payload = kwargs.get("payload")
+    payload = json.dumps(payload).encode()
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(host, json=payload) as response:
-                return await handle_response(response)
+        header = {
+            "Content-Type": "application/json"
+        }
+        response = eureka_client.do_service(LPR_STORAGE_APP_NAME, url_path, method=HTTP_REQUEST_METHOD_POST,
+                                            headers=header, data=payload, return_type=RETURN_TYPE_JSON)
+        return handle_response(response)
     except Exception as err:
         return handle_error(err)
 
 
-async def form_upload(**kwargs):
-    host = upload_types['raw']
-    payload = kwargs.get("payload")
-    temp = payload['files']
-    file = temp.file
-    filename = temp.filename
-    content_type = temp.content_type
-    name = temp.name
-
-    data = FormData()
-    data.add_field(name, file, filename=filename, content_type=content_type)
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(host, data=data) as response:
-                return await handle_response(response)
-    except Exception as err:
-        return handle_error(err)
-
-
-async def handle_response(response):
-    temp = await response.text()
-    data = json.loads(temp)
+def handle_response(response):
     return {
-        'status': response.status,
-        'message': data['message'],
-        'token': data['data'][0]['token']
+        'status': response['status'],
+        'message': response['message'],
+        'token': response['data'][0]['token']
     }
 
 
