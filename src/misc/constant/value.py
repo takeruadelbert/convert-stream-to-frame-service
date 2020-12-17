@@ -1,4 +1,5 @@
 APP_NAME = "stream-to-frame-service"
+LPR_STORAGE_APP_NAME = "lpr-storage-service"
 
 DEFAULT_PORT = 7071
 DEFAULT_PORT_EUREKA = 8761
@@ -23,3 +24,6 @@ STATUS_RUNNING = "RUNNING"
 DEFAULT_DATETIME_FORMAT = "YYYY-MM-DD HH:mm:ss"
 
 IMAGE_EXT = ('.jpg', '.jpeg', '.png')
+
+HTTP_REQUEST_METHOD_POST = "POST"
+RETURN_TYPE_JSON = "Json"
