@@ -122,7 +122,7 @@ class ConvertStreamToFrameService:
     async def upload_send_to_broker(self, data, gate_id, stream):
         if data:
             for item in data:
-                response_upload = await json_upload(upload_type='base64', payload=[item])
+                response_upload = json_upload(upload_type='base64', payload=[item])
                 if response_upload['status'] == HTTP_STATUS_OK:
                     token = response_upload['token']
                     sent_payload = {
