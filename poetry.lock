@@ -128,7 +128,7 @@ numpy = ">=1.17.3"
 
 [[package]]
 name = "py-eureka-client"
-version = "0.9.1"
+version = "0.9.3"
 description = "A eureka client written in python. Support registering your python component to Eureka Server, as well as calling remote services by pulling the the Eureka registry."
 category = "main"
 optional = false
@@ -412,8 +412,8 @@ opencv-python = [
     {file = "opencv_python-4.4.0.46-cp39-cp39-win_amd64.whl", hash = "sha256:0548981fe189e0d57b9cc65066b66fd70d4bc84ea906f349a63d9098e1b911c6"},
 ]
 py-eureka-client = [
-    {file = "py_eureka_client-0.9.1-py3-none-any.whl", hash = "sha256:edcfc03c47c1eca22d643579b139ac9ff02b5cb715c4fe44736e7742e4d63c12"},
-    {file = "py_eureka_client-0.9.1.tar.gz", hash = "sha256:78ebfee33884423175e45d3adf60a78c18db97ffde174bb7c14e0bc29cae057d"},
+    {file = "py_eureka_client-0.9.3-py3-none-any.whl", hash = "sha256:0a528da790f6ecc0b90167409e4aff6510b750bcb5dd0fabf8d13439a6f7f6e9"},
+    {file = "py_eureka_client-0.9.3.tar.gz", hash = "sha256:2491f39535edbd0550f6e769772d8783b9da84521dd9065adafc834b83376ed6"},
 ]
 pycparser = [
     {file = "pycparser-2.20-py2.py3-none-any.whl", hash = "sha256:7582ad22678f0fcd81102833f60ef8d0e57288b6b5fb00323d101be910e35705"},

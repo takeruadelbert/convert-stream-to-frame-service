@@ -1,11 +1,16 @@
 version: '2.4'
 services:
-  stream:
+  python:
+    image: tiangolo/uvicorn-gunicorn-starlette:python3.8
+  stream_to_frame:
     container_name: stream-to-frame
     image: takeruadelbert/stream-to-frame
-    command: ./run.sh -m http.server 7071
+    command: poetry run python src/main.py -m http.server 7071
     ports:
       - 7071:7071
     build:
       context: .
       dockerfile: docker/Dockerfile
+    env_file:
+      - environment.env
+    network_mode: "host"
