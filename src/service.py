@@ -3,21 +3,24 @@ import os
 import random
 
 import cv2
-from aiohttp import web
+from fastapi import HTTPException
+from pydantic import ValidationError
 
 from broker.broker import Broker
 from database.database import Database
 from misc.constant.message import *
 from misc.constant.value import *
 from misc.helper.helper import get_current_timestamp_ms
-from storage.storage import json_upload, form_upload
+from storage.storage import json_upload
 
 
 def return_message(**kwargs):
     message = kwargs.get("message", "")
     status = kwargs.get("status", HTTP_STATUS_OK)
     data = kwargs.get("data", [])
-    return web.json_response({'message': message, 'data': data}, status=status)
+    if status != HTTP_STATUS_OK:
+        raise HTTPException(status_code=status, detail=message)
+    return {'message': message, 'data': data}
 
 
 class ConvertStreamToFrameService:
@@ -52,39 +55,31 @@ class ConvertStreamToFrameService:
             self.logger.error('Cannot Converting Stream to Frame : {}'.format(error))
             return None
 
-    async def upload_encoded(self, request):
+    async def upload_encoded(self, payload):
         try:
-            payload = await request.json()
             self.logger.info('received data from master node : {}'.format(payload))
-            if not payload['encoded_file']:
-                self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
-                return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
-            ticket_number = await self.upload_image_to_broker(upload_type='base64', payload=[payload])
+            ticket_number = await self.upload_image_to_broker(upload_type='base64', payload=[payload.dict()])
             return self.show_ticket_number(ticket_number)
+        except ValidationError as error:
+            return self.process_error(error)
         except Exception as error:
             return self.process_error(error)
 
-    async def upload_raw(self, request):
+    async def upload_raw(self, payload):
         try:
-            payload = await request.post()
             self.logger.info('received data from master node : {}'.format(payload))
-            if not payload:
-                self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
-                return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
             ticket_number = await self.upload_image_to_broker(upload_type='raw', payload=payload)
             return self.show_ticket_number(ticket_number)
         except Exception as error:
             return self.process_error(error)
 
-    async def upload_url(self, request):
+    async def upload_url(self, payload):
         try:
-            payload = await request.json()
             self.logger.info('received data from master node : {}'.format(payload))
-            if not payload:
-                self.logger.warning(INVALID_PAYLOAD_DATA_MESSAGE)
-                return return_message(message=INVALID_PAYLOAD_DATA_MESSAGE, status=HTTP_STATUS_BAD_REQUEST)
-            ticket_number = await self.upload_image_to_broker(upload_type='url', payload=payload)
+            ticket_number = await self.upload_image_to_broker(upload_type='url', payload=payload.dict())
             return self.show_ticket_number(ticket_number)
+        except ValidationError as error:
+            return self.process_error(error)
         except Exception as error:
             return self.process_error(error)
 
@@ -106,10 +101,7 @@ class ConvertStreamToFrameService:
         upload_type = kwargs.get("upload_type")
         payload = kwargs.get("payload")
         if payload:
-            if upload_type == 'raw':
-                response = await form_upload(upload_type=upload_type, payload=payload)
-            else:
-                response = await json_upload(upload_type=upload_type, payload=payload)
+            response = json_upload(upload_type=upload_type, payload=payload)
             if response['status'] == HTTP_STATUS_OK:
                 token = response['token']
                 ticket_number = get_current_timestamp_ms()
@@ -130,7 +122,7 @@ class ConvertStreamToFrameService:
     async def upload_send_to_broker(self, data, gate_id, stream):
         if data:
             for item in data:
-                response_upload = await json_upload(upload_type='base64', payload=[item])
+                response_upload = json_upload(upload_type='base64', payload=[item])
                 if response_upload['status'] == HTTP_STATUS_OK:
                     token = response_upload['token']
                     sent_payload = {
@@ -152,8 +144,8 @@ class ConvertStreamToFrameService:
         result = []
         if data:
             for state in data:
-                url_stream = state[0]
-                id_gate = state[1]
+                url_stream = state.url
+                id_gate = state.id_gate
                 result.append({
                     'id_gate': id_gate,
                     'url_stream': url_stream
