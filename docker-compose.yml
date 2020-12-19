@@ -1,7 +1,7 @@
 version: '2.4'
 services:
   python:
-    image: tiangolo/uvicorn-gunicorn-starlette:python3.8
+    image: python:3.8-slim
   stream_to_frame:
     container_name: stream-to-frame
     image: takeruadelbert/stream-to-frame
