@@ -1,0 +1,8 @@
+dist/*
+docker/*
+log/*
+requirement/*
+*.yml
+*.env
+*.sh
+*.md
