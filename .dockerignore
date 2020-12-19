@@ -6,3 +6,4 @@ requirement/*
 *.env
 *.sh
 *.md
+src/log/*
