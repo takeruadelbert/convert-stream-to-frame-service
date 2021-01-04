@@ -57,7 +57,7 @@ class ConvertStreamToFrameService:
 
     async def upload_encoded(self, payload):
         try:
-            self.logger.info('received data from master node : {}'.format(payload))
+            self.logger.info('received data from master node : {}'.format(payload.filename))
             ticket_number = await self.upload_image_to_broker(upload_type='base64', payload=[payload.dict()])
             return self.show_ticket_number(ticket_number)
         except ValidationError as error:
