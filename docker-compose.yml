@@ -1,7 +1,7 @@
 version: '3.0'
 services:
   stream_to_frame:
-    container_name: stream-to-frame
+    container_name: stream-to-frame-container
     image: python:3.8-slim
     command: poetry run python src/main.py -m http.server 7071
     ports:
