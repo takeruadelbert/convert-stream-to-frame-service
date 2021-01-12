@@ -58,7 +58,8 @@ class ConvertStreamToFrameService:
     async def upload_encoded(self, payload):
         try:
             self.logger.info('received data from master node : {}'.format(payload.filename))
-            ticket_number = await self.upload_image_to_broker(upload_type='base64', payload=payload.dict())
+            feedback_url = payload.feedback_url
+            ticket_number = await self.upload_image_to_broker(feedback_url, upload_type='base64', payload=[payload.dict()])
             return self.show_ticket_number(ticket_number)
         except ValidationError as error:
             return self.process_error(error)
@@ -68,7 +69,8 @@ class ConvertStreamToFrameService:
     async def upload_raw(self, payload):
         try:
             self.logger.info('received data from master node : {}'.format(payload))
-            ticket_number = await self.upload_image_to_broker(upload_type='raw', payload=payload)
+            feedback_url = payload.feedback_url
+            ticket_number = await self.upload_image_to_broker(feedback_url, upload_type='raw', payload=payload)
             return self.show_ticket_number(ticket_number)
         except Exception as error:
             return self.process_error(error)
@@ -76,7 +78,8 @@ class ConvertStreamToFrameService:
     async def upload_url(self, payload):
         try:
             self.logger.info('received data from master node : {}'.format(payload))
-            ticket_number = await self.upload_image_to_broker(upload_type='url', payload=payload.dict())
+            feedback_url = payload.feedback_url
+            ticket_number = await self.upload_image_to_broker(feedback_url, upload_type='url', payload=payload.dict())
             return self.show_ticket_number(ticket_number)
         except ValidationError as error:
             return self.process_error(error)
@@ -97,12 +100,11 @@ class ConvertStreamToFrameService:
         self.logger.error(message)
         return return_message(status=HTTP_STATUS_UNPROCESSABLE_ENTITY, message=message)
 
-    async def upload_image_to_broker(self, **kwargs):
+    async def upload_image_to_broker(self, feedback_url, **kwargs):
         upload_type = kwargs.get("upload_type")
         payload = kwargs.get("payload")
-        feedback_url = payload['feedback_url']
         if payload:
-            response = json_upload(upload_type=upload_type, payload=[payload])
+            response = json_upload(upload_type=upload_type, payload=payload)
             if response['status'] == HTTP_STATUS_OK:
                 token = response['token']
                 ticket_number = get_current_timestamp_ms()
