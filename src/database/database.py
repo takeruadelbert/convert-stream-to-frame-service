@@ -24,6 +24,7 @@ class InputImage(Base):
     token = Column(String)
     ticket_number = Column(String)
     created_date = Column(DateTime)
+    feedback_url_id = Column(Integer)
 
 
 class DataState(Base):
@@ -34,6 +35,15 @@ class DataState(Base):
     status = Column(String)
     url = Column(String)
     created_date = Column(DateTime)
+
+
+class FeedbackUrl(Base):
+    __tablename__ = "feedback_url"
+    id = Column(Integer, primary_key=True)
+    url = Column(String)
+    created_date = Column(DateTime)
+    last_modified_date = Column(DateTime)
+    deleted = Column(Integer)
 
 
 class Database:
@@ -47,13 +57,23 @@ class Database:
         self.session.commit()
         return data_states
 
-    def add_default_image_result_data(self, ticket, token):
+    def add_default_image_result_data(self, ticket, token, feedback_url):
         try:
             input_image = InputImage(ticket_number=ticket, token=token, status=STATUS_PROCESSING,
-                                     created_date=get_current_datetime())
+                                     created_date=get_current_datetime(),
+                                     feedback_url_id=self.get_feedback_url_id(feedback_url))
             self.session.add(input_image)
             self.session.commit()
             return True
         except Exception as error:
             self.logger.error("Error has occurred when adding default data image result : {}".format(error))
             return False
+
+    def get_feedback_url_id(self, feedback_url):
+        try:
+            data_feedback_url = self.session.query(FeedbackUrl).filter(FeedbackUrl.url == feedback_url).first()
+            self.session.commit()
+            return data_feedback_url.id
+        except Exception as error:
+            self.logger.error("Error has occurred while fetching data feedback url : {}".format(error))
+            return None

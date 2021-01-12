@@ -58,7 +58,7 @@ class ConvertStreamToFrameService:
     async def upload_encoded(self, payload):
         try:
             self.logger.info('received data from master node : {}'.format(payload.filename))
-            ticket_number = await self.upload_image_to_broker(upload_type='base64', payload=[payload.dict()])
+            ticket_number = await self.upload_image_to_broker(upload_type='base64', payload=payload.dict())
             return self.show_ticket_number(ticket_number)
         except ValidationError as error:
             return self.process_error(error)
@@ -100,12 +100,13 @@ class ConvertStreamToFrameService:
     async def upload_image_to_broker(self, **kwargs):
         upload_type = kwargs.get("upload_type")
         payload = kwargs.get("payload")
+        feedback_url = payload['feedback_url']
         if payload:
-            response = json_upload(upload_type=upload_type, payload=payload)
+            response = json_upload(upload_type=upload_type, payload=[payload])
             if response['status'] == HTTP_STATUS_OK:
                 token = response['token']
                 ticket_number = get_current_timestamp_ms()
-                if self.database.add_default_image_result_data(ticket_number, token):
+                if self.database.add_default_image_result_data(ticket_number, token, feedback_url):
                     sent_payload = {'token': token, 'ticket_number': ticket_number}
                     self.logger.info('sending payload {} to queue'.format(sent_payload))
                     self.broker.produce(topic=os.getenv("KAFKA_IMAGE_PROCESS_TOPIC"), payload=sent_payload)
